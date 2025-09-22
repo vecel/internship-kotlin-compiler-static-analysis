@@ -24,14 +24,7 @@ class ControlFlowGraph(ast: Stmt) {
     }
 
     fun toMermaid(): String {
-        val indexed = mutableMapOf<Node, Int>()
-        var id = 1
-
-        // Indexing nodes to create mermaid representation of CFG
-        traverse { node ->
-            if (node !in indexed.keys) indexed[node] = id++
-        }
-
+        val indexed = getIndexedNodesMap()
         val builder = StringBuilder("flowchart TD\n")
 
         // Naming nodes on the chart
@@ -96,4 +89,15 @@ class ControlFlowGraph(ast: Stmt) {
         whileNode.nextIfTrue = nextIfTrueNode
         return whileNode
     }
+
+    private fun getIndexedNodesMap(): MutableMap<Node, Int> {
+        val indexed = mutableMapOf<Node, Int>()
+        var id = 1
+        traverse { node ->
+            if (node !in indexed.keys) indexed[node] = id++
+        }
+        return indexed
+    }
+
+
 }

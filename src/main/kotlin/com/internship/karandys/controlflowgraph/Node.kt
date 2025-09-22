@@ -1,11 +1,18 @@
 package com.internship.karandys.controlflowgraph
 
+class VariablesMap : Node {
+    override val variables = mutableMapOf<Expr.Var, Int>()
+}
+
 sealed interface Node {
-    class Assign(
+
+    val variables: MutableMap<Expr.Var, Int>
+
+    class Assign (
         val variable: Expr.Var,
         val value: Expr,
         val next: Node
-    ): Node {
+    ): Node by VariablesMap() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
@@ -26,7 +33,7 @@ sealed interface Node {
             return result
         }
     }
-    class Return(val result: Expr): Node {
+    class Return(val result: Expr): Node by VariablesMap() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
@@ -45,13 +52,12 @@ sealed interface Node {
         val cond: Expr,
         var nextIfTrue: Node,
         val nextIfFalse: Node
-    ): Node {
+    ): Node by VariablesMap() {
         private fun isLoop(): Boolean {
             return when (nextIfTrue) {
                 is Assign -> (nextIfTrue as Assign).next === this
-                is Return -> false
                 is Condition -> (nextIfTrue as Condition).nextIfTrue === this || (nextIfTrue as Condition).nextIfFalse === this
-                is Quit -> false
+                else -> false
             }
         }
 
@@ -75,11 +81,10 @@ sealed interface Node {
 
         override fun hashCode(): Int {
             var result = cond.hashCode()
-//            result = 31 * result + nextIfTrue.hashCode()
             result = 31 * result + nextIfFalse.hashCode()
             return result
         }
     }
 
-    object Quit : Node
+    object Quit : Node by VariablesMap()
 }
