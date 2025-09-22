@@ -1,9 +1,5 @@
 package com.internship.karandys.controlflowgraph
 
-import com.internship.karandys.Expr
-import com.internship.karandys.Node
-import com.internship.karandys.Stmt
-
 class ControlFlowGraph(ast: Stmt) {
     val head = nodeFromStmt(ast, Node.Quit)
 
@@ -41,9 +37,9 @@ class ControlFlowGraph(ast: Stmt) {
         // Naming nodes on the chart
         indexed.forEach { (node, id) ->
             when (node) {
-                is Node.Assign -> builder.append("   $id[${exprRepr(node.variable)} = ${exprRepr(node.value)}]\n")
-                is Node.Condition -> builder.append("   $id[if ${exprRepr(node.cond)}]\n")
-                is Node.Return -> builder.append("   $id[return ${exprRepr(node.result)}]\n")
+                is Node.Assign -> builder.append("   $id[${node.variable} = ${node.value}]\n")
+                is Node.Condition -> builder.append("   $id[if ${node.cond}]\n")
+                is Node.Return -> builder.append("   $id[return ${node.result}]\n")
                 else -> null
             }
         }
@@ -70,6 +66,7 @@ class ControlFlowGraph(ast: Stmt) {
             is Stmt.Assign -> Node.Assign(stmt.variable, stmt.value, next)
             is Stmt.If -> nodeFromIfStmt(stmt, next)
             is Stmt.Block -> nodeFromBlockStmt(stmt, next)
+            is Stmt.While -> nodeFromWhileStmt(stmt, next)
             is Stmt.Return -> Node.Return(stmt.result)
         }
     }
@@ -82,25 +79,21 @@ class ControlFlowGraph(ast: Stmt) {
         )
     }
 
-    private fun nodeFromBlockStmt(block: Stmt.Block, next: Node): Node {
-        val stack = mutableListOf(*block.stmt)
+    private fun nodeFromBlockStmt(stmt: Stmt.Block, next: Node): Node {
+        val stack = mutableListOf(*stmt.stmt)
         var lastNode = next
         while (stack.isNotEmpty()) {
-            val stmt = stack.removeLast()
-            val node = nodeFromStmt(stmt, lastNode)
+            val topStmt = stack.removeLast()
+            val node = nodeFromStmt(topStmt, lastNode)
             lastNode = node
         }
         return lastNode
     }
 
-    // todo move this to appropriate place
-    private fun exprRepr(expr: Expr): String {
-        return when (expr) {
-            is Expr.Var -> expr.name
-            is Expr.Const -> expr.value.toString()
-            is Expr.Plus -> "${exprRepr(expr.left)} + ${exprRepr(expr.right)}"
-            is Expr.Mul -> "${exprRepr(expr.left)} * ${exprRepr(expr.right)}"
-            else -> "Not implemented in the example"
-        }
+    private fun nodeFromWhileStmt(stmt: Stmt.While, next: Node): Node {
+        val whileNode = Node.Condition(stmt.cond, Node.Quit, next)
+        val nextIfTrueNode = nodeFromStmt(stmt.body, whileNode)
+        whileNode.nextIfTrue = nextIfTrueNode
+        return whileNode
     }
 }
