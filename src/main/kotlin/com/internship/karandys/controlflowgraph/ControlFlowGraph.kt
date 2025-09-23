@@ -3,14 +3,12 @@ package com.internship.karandys.controlflowgraph
 class ControlFlowGraph(ast: Stmt) {
     val head = nodeFromStmt(ast, Node.Quit)
 
-    fun traverse(action: (Node) -> Unit) {
-        val visited = mutableSetOf<Node>()
+    fun traverse(stopPredicate: (Node) -> Boolean, action: (Node) -> Unit) {
         val queue = ArrayDeque<Node>()
         queue.add(head)
         while (queue.isNotEmpty()) {
             val node = queue.removeFirst()
-            if (node in visited) continue
-            visited.add(node)
+            if (stopPredicate(node)) continue
             when (node) {
                 is Node.Assign -> queue.addLast(node.next)
                 is Node.Condition -> {
@@ -23,6 +21,43 @@ class ControlFlowGraph(ast: Stmt) {
         }
     }
 
+    fun mapVariables() {
+        val variables = mutableMapOf<Expr.Var, Int?>()
+        val visited = mutableSetOf<Node>()
+
+        // Getting all variables from assign expressions
+        traverse(
+            stopPredicate = { node -> node in visited }
+        ) { node ->
+            if (node is Node.Assign) {
+                variables[node.variable] = null
+            }
+            visited.add(node)
+        }
+
+        // We have adapted BFS to keep parent's variables in queue
+        data class WorkNode(val node: Node, val vars: Map<Expr.Var, Int?>)
+        val queue = ArrayDeque<WorkNode>()
+        queue.add(WorkNode(head, variables))
+        while (queue.isNotEmpty()) {
+            val (node, vars) = queue.removeFirst()
+            val before = node.variables.toMap()
+            node.update(vars)
+            val after = node.variables.toMap()
+
+            if (before == after) continue
+
+            when (node) {
+                is Node.Assign -> queue.addLast(WorkNode(node.next, node.variables))
+                is Node.Condition -> {
+                    queue.addLast(WorkNode(node.nextIfTrue, node.variables))
+                    queue.addLast(WorkNode(node.nextIfFalse, node.variables))
+                }
+                else -> null
+            }
+        }
+    }
+
     fun toMermaid(): String {
         val indexed = getIndexedNodesMap()
         val builder = StringBuilder("flowchart TD\n")
@@ -30,15 +65,18 @@ class ControlFlowGraph(ast: Stmt) {
         // Naming nodes on the chart
         indexed.forEach { (node, id) ->
             when (node) {
-                is Node.Assign -> builder.append("   $id[${node.variable} = ${node.value}]\n")
-                is Node.Condition -> builder.append("   $id[if ${node.cond}]\n")
-                is Node.Return -> builder.append("   $id[return ${node.result}]\n")
+                is Node.Assign,
+                is Node.Condition,
+                is Node.Return -> builder.append("   $id[$node]\n")
                 else -> null
             }
         }
 
         // Creating edges for the chart
-        traverse { node ->
+        val visited = mutableSetOf<Node>()
+        traverse(
+            stopPredicate = { node -> node in visited }
+        ) { node ->
             when (node) {
                 is Node.Assign -> {
                     builder.append("   ${indexed[node]} --> ${indexed[node.next]}\n")
@@ -49,6 +87,7 @@ class ControlFlowGraph(ast: Stmt) {
                 }
                 else -> null
             }
+            visited.add(node)
         }
 
         return builder.toString()
@@ -93,7 +132,9 @@ class ControlFlowGraph(ast: Stmt) {
     private fun getIndexedNodesMap(): MutableMap<Node, Int> {
         val indexed = mutableMapOf<Node, Int>()
         var id = 1
-        traverse { node ->
+        traverse(
+            stopPredicate = { node -> node in indexed.keys }
+        ) { node ->
             if (node !in indexed.keys) indexed[node] = id++
         }
         return indexed

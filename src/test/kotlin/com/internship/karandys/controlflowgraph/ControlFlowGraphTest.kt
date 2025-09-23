@@ -18,8 +18,10 @@ class ControlFlowGraphTest {
             Node.Assign(Expr.Var("a"), Expr.Const(17), Node.Quit)
         )
 
-        assertEquals(cfg.head, head)
-        assertEquals((cfg.head as Node.Assign).next, head.next)
+        cfg.head as Node.Assign
+
+        assertEquals(head, cfg.head)
+        assertEquals(head.next, cfg.head.next)
     }
 
     @Test
@@ -41,10 +43,12 @@ class ControlFlowGraphTest {
             Node.Assign(Expr.Var("y"), Expr.Const(10), returnNode)
         )
 
-        assertEquals(cfg.head, head)
-        assertEquals((cfg.head as Node.Condition).nextIfTrue, head.nextIfTrue)
-        assertEquals(cfg.head.nextIfFalse, head.nextIfFalse)
-        assertNotEquals(cfg.head.nextIfFalse, head.nextIfTrue)
+        cfg.head as Node.Condition
+
+        assertEquals(head, cfg.head)
+        assertEquals(head.nextIfTrue, cfg.head.nextIfTrue)
+        assertEquals(head.nextIfFalse, cfg.head.nextIfFalse)
+        assertNotEquals(head.nextIfFalse, cfg.head.nextIfTrue)
     }
 
     @Test
@@ -61,8 +65,10 @@ class ControlFlowGraphTest {
             Node.Return(Expr.Plus(Expr.Var("x"), Expr.Const(2)))
         )
 
-        assertEquals(cfg.head, head)
-        assertEquals((cfg.head as Node.Assign).next, head.next)
+        cfg.head as Node.Assign
+
+        assertEquals(head, cfg.head)
+        assertEquals(head.next, cfg.head.next)
     }
 
     @Test
@@ -84,9 +90,11 @@ class ControlFlowGraphTest {
         val body = Node.Assign(Expr.Var("x"), Expr.Plus(Expr.Var("x"), Expr.Const(1)), head)
         head.nextIfTrue = body
 
-        assertEquals(cfg.head, head)
-        assertEquals((cfg.head as Node.Condition).nextIfTrue, body)
-        assertEquals(cfg.head.nextIfFalse, head.nextIfFalse)
+        cfg.head as Node.Condition
+
+        assertEquals(head, cfg.head)
+        assertEquals(body, cfg.head.nextIfTrue)
+        assertEquals(head.nextIfFalse, cfg.head.nextIfFalse)
     }
 
     @Test
@@ -110,16 +118,16 @@ class ControlFlowGraphTest {
         val mermaid =
             "flowchart TD\n" +
             "   1[x = 0]\n" +
-            "   2[if a]\n" +
+            "   2[If a]\n" +
             "   3[y = 5]\n" +
             "   4[y = 1]\n" +
-            "   5[return x * 2 + y]\n" +
+            "   5[Return x * 2 + y]\n" +
             "   1 --> 2\n" +
             "   2 --> |True|3\n" +
             "   2 --> |False|4\n" +
             "   3 --> 5\n" +
             "   4 --> 5\n"
 
-        assertEquals(cfg.toMermaid(), mermaid)
+        assertEquals(mermaid, cfg.toMermaid())
     }
 }

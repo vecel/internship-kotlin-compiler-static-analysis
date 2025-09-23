@@ -29,6 +29,6 @@ fun main() {
     )
 
     val cfg = ControlFlowGraph(program)
-    val mermaid = cfg.toMermaid()
-    println(mermaid)
+    cfg.mapVariables()
+    println(cfg.toMermaid())
 }

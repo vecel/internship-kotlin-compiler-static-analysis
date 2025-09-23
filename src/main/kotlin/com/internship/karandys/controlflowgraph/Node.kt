@@ -1,12 +1,33 @@
 package com.internship.karandys.controlflowgraph
 
 class VariablesMap : Node {
-    override val variables = mutableMapOf<Expr.Var, Int>()
+    override val variables = mutableMapOf<Expr.Var, Int?>()
 }
 
 sealed interface Node {
 
-    val variables: MutableMap<Expr.Var, Int>
+    val variables: MutableMap<Expr.Var, Int?>
+
+    fun variablesString() : String {
+        if (variables.isEmpty()) return ""
+        val result = StringBuilder("\n   Vars")
+        for (kv in variables) {
+            result.append("\n   ${kv.key}: ${kv.value}")
+        }
+        return result.toString()
+    }
+
+    fun update(vars: Map<Expr.Var, Int?>) {
+        if (vars.isEmpty()) return
+        vars.forEach { (key, value) ->
+            if (key !in variables.keys) {
+                variables[key] = value
+            }
+            if (variables[key] != value) {
+                variables[key] = null
+            }
+        }
+    }
 
     class Assign (
         val variable: Expr.Var,
@@ -32,6 +53,17 @@ sealed interface Node {
             result = 31 * result + next.hashCode()
             return result
         }
+
+        override fun toString(): String {
+            return "$variable = ${value}${variablesString()}"
+        }
+
+        override fun update(vars: Map<Expr.Var, Int?>) {
+            super.update(vars)
+            if (value is Expr.Const) {
+                variables[variable] = value.value
+            }
+        }
     }
     class Return(val result: Expr): Node by VariablesMap() {
         override fun equals(other: Any?): Boolean {
@@ -45,6 +77,10 @@ sealed interface Node {
 
         override fun hashCode(): Int {
             return result.hashCode()
+        }
+
+        override fun toString(): String {
+            return "Return $result${variablesString()}"
         }
     }
 
@@ -83,6 +119,10 @@ sealed interface Node {
             var result = cond.hashCode()
             result = 31 * result + nextIfFalse.hashCode()
             return result
+        }
+
+        override fun toString(): String {
+            return "If $cond${variablesString()}"
         }
     }
 
