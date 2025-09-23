@@ -130,4 +130,37 @@ class ControlFlowGraphTest {
 
         assertEquals(mermaid, cfg.toMermaid())
     }
+
+    @Test
+    fun testMermaidWithVariablesRepresentation() {
+        val ast: Stmt = Stmt.Block(
+            Stmt.Assign(Expr.Var("x"), Expr.Const(0)),
+            Stmt.If(
+                Expr.Const(1),
+                Stmt.Assign(Expr.Var("y"), Expr.Const(0)),
+                Stmt.Assign(Expr.Var("y"), Expr.Const(1))
+            ),
+            Stmt.Return(Expr.Var("x"))
+        )
+        val cfg = ControlFlowGraph(ast)
+        cfg.mapVariables()
+
+        val unknownY = "\n   Vars\n   x: 0\n   y: null"
+        val knownY0 = "\n   Vars\n   x: 0\n   y: 0"
+        val knownY1 = "\n   Vars\n   x: 0\n   y: 1"
+        val mermaid =
+            "flowchart TD\n" +
+            "   1[x = 0$unknownY]\n" +
+            "   2[If 1$unknownY]\n" +
+            "   3[y = 0$knownY0]\n" +
+            "   4[y = 1$knownY1]\n" +
+            "   5[Return x$unknownY]\n" +
+            "   1 --> 2\n" +
+            "   2 --> |True|3\n" +
+            "   2 --> |False|4\n" +
+            "   3 --> 5\n" +
+            "   4 --> 5\n"
+
+        assertEquals(mermaid, cfg.toMermaid())
+    }
 }
