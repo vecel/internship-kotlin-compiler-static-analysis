@@ -99,6 +99,11 @@ sealed interface Stmt {
 }
 
 sealed interface Expr {
+
+    fun withReplacedVars(vars: Map<Var, Const?>): Expr {
+        return this
+    }
+
     class Const(val value: Int) : Expr {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -135,11 +140,12 @@ sealed interface Expr {
         override fun toString(): String {
             return name
         }
-    }
 
-    class Eq(val left: Expr, val right: Expr) : Expr
-    class NEq(val left: Expr, val right: Expr) : Expr
-    class Lt(val left: Expr, val right: Expr) : Expr
+        override fun withReplacedVars(vars: Map<Var, Const?>): Expr {
+            if (this !in vars.keys) return this
+            return vars[this] ?: this
+        }
+    }
 
     class Plus(val left: Expr, val right: Expr) : Expr {
         override fun equals(other: Any?): Boolean {
@@ -163,9 +169,12 @@ sealed interface Expr {
         override fun toString(): String {
             return "${left.toString()} + ${right.toString()}"
         }
+
+        override fun withReplacedVars(vars: Map<Var, Const?>): Expr {
+            return Plus(left.withReplacedVars(vars), right.withReplacedVars(vars))
+        }
     }
 
-    class Minus(val left: Expr, val right: Expr) : Expr
     class Mul(val left: Expr, val right: Expr) : Expr {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -188,5 +197,15 @@ sealed interface Expr {
         override fun toString(): String {
             return "${left.toString()} * ${right.toString()}"
         }
+
+        override fun withReplacedVars(vars: Map<Var, Const?>): Expr {
+            return Mul(left.withReplacedVars(vars), right.withReplacedVars(vars))
+        }
     }
+
+    // Not implemented in the example
+    class Eq(val left: Expr, val right: Expr) : Expr
+    class NEq(val left: Expr, val right: Expr) : Expr
+    class Lt(val left: Expr, val right: Expr) : Expr
+    class Minus(val left: Expr, val right: Expr) : Expr
 }

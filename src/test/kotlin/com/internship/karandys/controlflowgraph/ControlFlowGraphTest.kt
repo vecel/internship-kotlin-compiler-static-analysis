@@ -163,4 +163,38 @@ class ControlFlowGraphTest {
 
         assertEquals(mermaid, cfg.toMermaid())
     }
+
+    @Test
+    fun testWithReplacedVars() {
+        val expr = Expr.Plus(
+            Expr.Var("x"),
+            Expr.Mul(Expr.Var("y"), Expr.Const(2))
+        )
+        val vars = mapOf<Expr.Var, Expr.Const?>(Expr.Var("x") to Expr.Const(2), Expr.Var("y") to Expr.Const(0))
+        val replaced = expr.withReplacedVars(vars)
+
+        val expected = Expr.Plus(
+            Expr.Const(2),
+            Expr.Mul(Expr.Const(0), Expr.Const(2))
+        )
+
+        assertEquals(expected, replaced)
+    }
+
+    @Test
+    fun testWithReplacedVarsWithNull() {
+        val expr = Expr.Plus(
+            Expr.Var("x"),
+            Expr.Mul(Expr.Var("y"), Expr.Const(2))
+        )
+        val vars = mapOf<Expr.Var, Expr.Const?>(Expr.Var("x") to Expr.Const(2), Expr.Var("y") to null)
+        val replaced = expr.withReplacedVars(vars)
+
+        val expected = Expr.Plus(
+            Expr.Const(2),
+            Expr.Mul(Expr.Var("y"), Expr.Const(2))
+        )
+
+        assertEquals(expected, replaced)
+    }
 }

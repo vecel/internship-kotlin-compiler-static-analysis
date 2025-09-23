@@ -31,4 +31,5 @@ fun main() {
     val cfg = ControlFlowGraph(program)
     cfg.mapVariables()
     println(cfg.toMermaid())
+    val newHead = cfg.withReplacedVars()
 }

@@ -22,7 +22,7 @@ class ControlFlowGraph(ast: Stmt) {
     }
 
     fun mapVariables() {
-        val variables = mutableMapOf<Expr.Var, Int?>()
+        val variables = mutableMapOf<Expr.Var, Expr.Const?>()
         val visited = mutableSetOf<Node>()
 
         // Getting all variables from assign expressions
@@ -36,7 +36,7 @@ class ControlFlowGraph(ast: Stmt) {
         }
 
         // We have adapted BFS to keep parent's variables in queue
-        data class WorkNode(val node: Node, val vars: Map<Expr.Var, Int?>)
+        data class WorkNode(val node: Node, val vars: Map<Expr.Var, Expr.Const?>)
         val queue = ArrayDeque<WorkNode>()
         queue.add(WorkNode(head, variables))
         while (queue.isNotEmpty()) {
@@ -57,6 +57,10 @@ class ControlFlowGraph(ast: Stmt) {
             }
         }
     }
+
+//    fun withReplacedVars(): Node {
+//        return head.withReplacedVars()
+//    }
 
     fun toMermaid(): String {
         val indexed = getIndexedNodesMap()

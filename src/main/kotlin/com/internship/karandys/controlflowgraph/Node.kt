@@ -1,12 +1,12 @@
 package com.internship.karandys.controlflowgraph
 
 class VariablesMap : Node {
-    override val variables = mutableMapOf<Expr.Var, Int?>()
+    override val variables = mutableMapOf<Expr.Var, Expr.Const?>()
 }
 
 sealed interface Node {
 
-    val variables: MutableMap<Expr.Var, Int?>
+    val variables: MutableMap<Expr.Var, Expr.Const?>
 
     fun variablesString() : String {
         if (variables.isEmpty()) return ""
@@ -17,7 +17,7 @@ sealed interface Node {
         return result.toString()
     }
 
-    fun update(vars: Map<Expr.Var, Int?>) {
+    fun update(vars: Map<Expr.Var, Expr.Const?>) {
         if (vars.isEmpty()) return
         vars.forEach { (key, value) ->
             if (key !in variables.keys) {
@@ -27,6 +27,11 @@ sealed interface Node {
                 variables[key] = null
             }
         }
+    }
+
+    fun withReplacedVars(): Node {
+//        TODO("Force to implement it in children")
+        return this
     }
 
     class Assign (
@@ -58,13 +63,22 @@ sealed interface Node {
             return "$variable = ${value}${variablesString()}"
         }
 
-        override fun update(vars: Map<Expr.Var, Int?>) {
+        override fun update(vars: Map<Expr.Var, Expr.Const?>) {
             super.update(vars)
             if (value is Expr.Const) {
-                variables[variable] = value.value
+                variables[variable] = value
             }
         }
+
+        override fun withReplacedVars(): Node {
+            return Assign(
+                variable,
+                value.withReplacedVars(variables),
+                next.withReplacedVars()
+            )
+        }
     }
+
     class Return(val result: Expr): Node by VariablesMap() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -81,6 +95,12 @@ sealed interface Node {
 
         override fun toString(): String {
             return "Return $result${variablesString()}"
+        }
+
+        override fun withReplacedVars(): Node {
+            return Return(
+                result.withReplacedVars(variables)
+            )
         }
     }
 
@@ -123,6 +143,14 @@ sealed interface Node {
 
         override fun toString(): String {
             return "If $cond${variablesString()}"
+        }
+
+        override fun withReplacedVars(): Node {
+            return Condition(
+                cond.withReplacedVars(variables),
+                nextIfTrue.withReplacedVars(),
+                nextIfFalse.withReplacedVars()
+            )
         }
     }
 
