@@ -29,11 +29,6 @@ sealed interface Node {
         }
     }
 
-    fun withReplacedVars(): Node {
-//        TODO("Force to implement it in children")
-        return this
-    }
-
     class Assign (
         val variable: Expr.Var,
         val value: Expr,
@@ -69,14 +64,6 @@ sealed interface Node {
                 variables[variable] = value
             }
         }
-
-        override fun withReplacedVars(): Node {
-            return Assign(
-                variable,
-                value.withReplacedVars(variables),
-                next.withReplacedVars()
-            )
-        }
     }
 
     class Return(val result: Expr): Node by VariablesMap() {
@@ -96,27 +83,14 @@ sealed interface Node {
         override fun toString(): String {
             return "Return $result${variablesString()}"
         }
-
-        override fun withReplacedVars(): Node {
-            return Return(
-                result.withReplacedVars(variables)
-            )
-        }
     }
 
     class Condition(
         val cond: Expr,
         var nextIfTrue: Node,
-        val nextIfFalse: Node
+        val nextIfFalse: Node,
+        val isLoop: Boolean = false
     ): Node by VariablesMap() {
-        private fun isLoop(): Boolean {
-            return when (nextIfTrue) {
-                is Assign -> (nextIfTrue as Assign).next === this
-                is Condition -> (nextIfTrue as Condition).nextIfTrue === this || (nextIfTrue as Condition).nextIfFalse === this
-                else -> false
-            }
-        }
-
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
@@ -124,11 +98,11 @@ sealed interface Node {
             other as Condition
 
             if (cond != other.cond) return false
-            if (isLoop()) {
+            if (isLoop) {
                 // Checking hash codes is not enough in production, but I will leave it in this minimal working example
-                if (!other.isLoop() || nextIfTrue.hashCode() != other.nextIfTrue.hashCode()) return false
+                if (!other.isLoop || nextIfTrue.hashCode() != other.nextIfTrue.hashCode()) return false
             } else {
-                if (other.isLoop() || nextIfTrue != other.nextIfTrue) return false
+                if (other.isLoop || nextIfTrue != other.nextIfTrue) return false
             }
             if (nextIfFalse != other.nextIfFalse) return false
 
@@ -143,14 +117,6 @@ sealed interface Node {
 
         override fun toString(): String {
             return "If $cond${variablesString()}"
-        }
-
-        override fun withReplacedVars(): Node {
-            return Condition(
-                cond.withReplacedVars(variables),
-                nextIfTrue.withReplacedVars(),
-                nextIfFalse.withReplacedVars()
-            )
         }
     }
 

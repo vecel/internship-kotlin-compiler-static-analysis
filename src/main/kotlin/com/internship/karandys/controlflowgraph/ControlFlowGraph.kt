@@ -1,7 +1,11 @@
 package com.internship.karandys.controlflowgraph
 
-class ControlFlowGraph(ast: Stmt) {
+class ControlFlowGraph(ast: Stmt, trackVariables: Boolean = true) {
     val head = nodeFromStmt(ast, Node.Quit)
+
+    init {
+        if (trackVariables) trackVariables()
+    }
 
     fun traverse(stopPredicate: (Node) -> Boolean, action: (Node) -> Unit) {
         val queue = ArrayDeque<Node>()
@@ -21,7 +25,7 @@ class ControlFlowGraph(ast: Stmt) {
         }
     }
 
-    fun mapVariables() {
+    fun trackVariables() {
         val variables = mutableMapOf<Expr.Var, Expr.Const?>()
         val visited = mutableSetOf<Node>()
 
@@ -57,10 +61,6 @@ class ControlFlowGraph(ast: Stmt) {
             }
         }
     }
-
-//    fun withReplacedVars(): Node {
-//        return head.withReplacedVars()
-//    }
 
     fun toMermaid(): String {
         val indexed = getIndexedNodesMap()
@@ -127,7 +127,7 @@ class ControlFlowGraph(ast: Stmt) {
     }
 
     private fun nodeFromWhileStmt(stmt: Stmt.While, next: Node): Node {
-        val whileNode = Node.Condition(stmt.cond, Node.Quit, next)
+        val whileNode = Node.Condition(stmt.cond, Node.Quit, next, true)
         val nextIfTrueNode = nodeFromStmt(stmt.body, whileNode)
         whileNode.nextIfTrue = nextIfTrueNode
         return whileNode
@@ -143,6 +143,4 @@ class ControlFlowGraph(ast: Stmt) {
         }
         return indexed
     }
-
-
 }

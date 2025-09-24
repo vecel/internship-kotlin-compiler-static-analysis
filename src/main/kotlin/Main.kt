@@ -28,8 +28,8 @@ fun main() {
         )
     )
 
-    val cfg = ControlFlowGraph(program)
-    cfg.mapVariables()
-    println(cfg.toMermaid())
-    val newHead = cfg.withReplacedVars()
+    val cfg = ControlFlowGraph(program, trackVariables = true)
+    val mermaid = cfg.toMermaid()
+
+    println(mermaid)
 }

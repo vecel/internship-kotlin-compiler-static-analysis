@@ -85,7 +85,8 @@ class ControlFlowGraphTest {
         val head = Node.Condition(
             Expr.Var("x"),
             Node.Quit,
-            Node.Return(Expr.Var("x"))
+            Node.Return(Expr.Var("x")),
+            true
         )
         val body = Node.Assign(Expr.Var("x"), Expr.Plus(Expr.Var("x"), Expr.Const(1)), head)
         head.nextIfTrue = body
@@ -143,7 +144,7 @@ class ControlFlowGraphTest {
             Stmt.Return(Expr.Var("x"))
         )
         val cfg = ControlFlowGraph(ast)
-        cfg.mapVariables()
+        cfg.trackVariables()
 
         val unknownY = "\n   Vars\n   x: 0\n   y: null"
         val knownY0 = "\n   Vars\n   x: 0\n   y: 0"
